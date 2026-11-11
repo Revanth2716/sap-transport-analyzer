@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${request.trkorr})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav('overview')}"></nav>
+
+<div class="page" th:with="a=${assessment}, r=${request}">
+  <div class="page-head">
+    <div class="between">
+      <div>
+        <h1>
+          <span th:text="${r.trkorr}">K900001</span>
+          <span class="pill" th:text="${r.requestType}">WORKBENCH</span>
+          <span class="sev" th:classappend="${a.severity.cssClass}"
+                th:text="${a.severity.label}">Status</span>
+        </h1>
+        <p th:text="${r.description} + ' · owner ' + ${r.owner} + ' · created '
+                   + ${r.createdOnDisplay} + ' · ' + ${r.sourceSystem} + ' → '
+                   + ${r.targetSystem}">Description</p>
+      </div>
+      <div class="scorebox">
+        <div class="label">Readiness score</div>
+        <div class="value" th:classappend="${a.severity.cssClass()}"
+             th:text="${a.score}">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice notice-ok" th:if="${released}">
+    The request has been released for transport. The readiness score has been
+    recalculated.
+  </div>
+
+  <div class="notice notice-info" th:if="${already}">
+    The request was already released - nothing changed.
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Status</div>
+      <div class="value" style="font-size:16px" th:text="${r.statusText}">Status</div>
+      <div class="sub" th:text="'code ' + ${r.status}">code</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Objects</div>
+      <div class="value" th:text="${#lists.size(a.objects)}">0</div>
+      <div class="sub">carried by this request</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Conflicts</div>
+      <div class="value" th:classappend="${#lists.isEmpty(a.conflicts)} ? '' : 'critical'"
+           th:text="${#lists.size(a.conflicts)}">0</div>
+      <div class="sub">also in another open request</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Last import</div>
+      <div class="value" style="font-size:16px" th:text="${a.lastImportedAtDisplay}">never</div>
+      <div class="sub">the evidence that it arrived</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Findings</div>
+      <div class="value" th:text="${a.findingCount()}">0</div>
+      <div class="sub">each with an action</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>What is wrong with this request</h2>
+    <div class="findings" th:if="${not #lists.isEmpty(a.findings)}">
+      <div class="finding" th:each="f : ${a.findings}">
+        <div class="finding-head">
+          <span class="sev" th:classappend="${f.severity.cssClass}"
+                th:text="${f.severity.label}">Severity</span>
+          <span class="pill" th:text="${f.category}">CATEGORY</span>
+        </div>
+        <div class="finding-message" th:text="${f.message}">Message</div>
+        <div class="finding-action">
+          <strong>Do this:</strong> <span th:text="${f.recommendation}">Action</span>
+        </div>
+      </div>
+    </div>
+    <div class="notice notice-ok" th:if="${#lists.isEmpty(a.findings)}">
+      Nothing to fix - the request is released, it does not conflict with
+      anything, and it has reached its target system.
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="panel">
+      <h2>Objects <span class="hint" th:text="${#lists.size(a.objects)} + ' in this request'">0</span></h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>Object</th><th>Type</th><th>Field</th><th>Last changed</th><th>Conflict</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="o : ${a.objects}">
+              <td class="nowrap"><code th:text="${o.objectName}">ZCL_PAYMENT</code></td>
+              <td class="nowrap" th:text="${o.objectType}">CLAS</td>
+              <td class="muted small nowrap" th:text="${o.fieldName} ?: '-'">-</td>
+              <td class="muted small nowrap" th:text="${o.lastChangedDisplay}">WHEN</td>
+              <td class="nowrap">
+                <span class="pill status-failed"
+                      th:if="${a.conflicts != null and o.objectKey != null
+                             and #lists.contains(a.conflicts, o)}">conflict</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Import history</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>When</th><th>System</th><th>Result</th><th>Message</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="i : ${a.imports}">
+              <td class="muted small nowrap" th:text="${i.importedAtDisplay}">WHEN</td>
+              <td class="nowrap" th:text="${i.systemId}">PRD</td>
+              <td class="nowrap">
+                <span class="pill" th:classappend="${i.result == 'OK'} ? 'status-ok' : 'status-failed'"
+                      th:text="${i.result}">OK</span>
+              </td>
+              <td class="muted small" th:text="${i.message}">Message</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(a.imports)}">
+              <td colspan="4" class="muted center">
+                This request has never been imported anywhere.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="notice notice-info mt" th:if="${not #lists.isEmpty(a.dependents)}">
+        This request is blocked by
+        <span th:each="d : ${a.dependents}" th:text="${d.trkorr} + ' '">K900001</span>.
+      </div>
+
+      <form th:if="${currentRole == 'CHANGE_MANAGER' and r.isInDevelopment()}"
+            th:action="@{'/requests/' + ${r.trkorr} + '/release'}" method="post" class="mt">
+        <button type="submit">Release for transport</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

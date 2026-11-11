@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Overview')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav('overview')}"></nav>
+
+<div class="page">
+  <div class="page-head">
+    <h1>Change and transport readiness</h1>
+    <p>What is going to break the next transport, and what has to be cleared first.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Requests</div>
+      <div class="value" th:text="${requestCount}">0</div>
+      <div class="sub">in the landscape</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Critical</div>
+      <div class="value critical" th:text="${criticalCount}">0</div>
+      <div class="sub">will break an import</div>
+    </div>
+    <div class="kpi">
+      <div class="label">High</div>
+      <div class="value high" th:text="${highCount}">0</div>
+      <div class="sub">needs attention this week</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Conflicts</div>
+      <div class="value critical" th:text="${conflictCount}">0</div>
+      <div class="sub">objects in two open requests</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Average score</div>
+      <div class="value" th:text="${averageScore}">0</div>
+      <div class="sub">across the landscape</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Readiness by request <span class="hint">worst first</span></h2>
+    <div class="chart-wrap" th:utext="${scoreChart}"></div>
+  </div>
+
+  <div class="panel" th:if="${conflictCount > 0}">
+    <h2>Object conflicts <span class="hint">the second import wins</span></h2>
+    <div class="chart-wrap" th:utext="${conflictChart}"></div>
+    <p class="muted small mt">
+      Two open requests holding the same object means the second import
+      overwrites the first. Nothing errors, and the first developer's work
+      disappears.
+    </p>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="panel">
+      <h2>Transport requests</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>Request</th><th>Description</th><th>Owner</th><th>Target</th>
+              <th>Age</th><th>Score</th><th>Status</th><th>Findings</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="a : ${assessments}">
+              <td class="nowrap">
+                <a th:href="@{'/requests/' + ${a.request.trkorr}}"
+                   th:text="${a.request.trkorr}">K900001</a>
+              </td>
+              <td th:text="${a.request.description}">Description</td>
+              <td class="nowrap muted small" th:text="${a.request.owner}">OWNER</td>
+              <td class="nowrap" th:text="${a.request.targetSystem}">PRD</td>
+              <td class="nowrap muted small"
+                  th:text="${a.request.createdOnDisplay}">WHEN</td>
+              <td class="nowrap"><strong th:text="${a.score}">0</strong></td>
+              <td class="nowrap">
+                <span class="sev" th:classappend="${a.severity.cssClass}"
+                      th:text="${a.severity.label}">Status</span>
+              </td>
+              <td class="nowrap" th:text="${a.findingCount()}">0</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(assessments)}">
+              <td colspan="8" class="muted center">No transport requests found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Findings <span class="hint">most severe first</span></h2>
+      <div class="findings">
+        <div class="finding" th:each="f : ${findings}">
+          <div class="finding-head">
+            <span class="sev" th:classappend="${f.severity.cssClass}"
+                  th:text="${f.severity.label}">Severity</span>
+            <a class="finding-system" th:href="@{'/requests/' + ${f.requestId}}"
+               th:text="${f.requestId}">K900001</a>
+            <span class="pill" th:text="${f.category}">CATEGORY</span>
+          </div>
+          <div class="finding-message" th:text="${f.message}">Message</div>
+          <div class="finding-action">
+            <strong>Do this:</strong> <span th:text="${f.recommendation}">Action</span>
+          </div>
+        </div>
+        <div class="muted center" th:if="${#lists.isEmpty(findings)}">
+          No findings - every request can go.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Recent activity</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr th:each="entry : ${audit}">
+            <td class="muted small nowrap" th:text="${entry.atDisplay}">TS</td>
+            <td class="nowrap" th:text="${entry.username}">USER</td>
+            <td class="nowrap"><span class="pill" th:text="${entry.action}">ACTION</span></td>
+            <td class="muted small" th:text="${entry.detail}">DETAIL</td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(audit)}">
+            <td colspan="4" class="muted center">No activity recorded yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

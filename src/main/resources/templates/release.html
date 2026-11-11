@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${system.systemId})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav('releases')}"></nav>
+
+<div class="page">
+  <div class="page-head">
+    <div class="between">
+      <div>
+        <h1>
+          <span th:text="${system.systemId}">PRD</span>
+          <span class="pill" th:if="${system.target}">production target</span>
+        </h1>
+        <p th:text="${system.description} + ' · ' + ${system.systemRole}">Description</p>
+      </div>
+      <div class="flex">
+        <a class="btn" th:href="@{'/releases/' + ${system.systemId} + '/checklist.md'}">
+          Download the checklist
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>The release train <span class="hint">import order</span></h2>
+    <div class="chart-wrap" th:utext="${trainChart}"></div>
+  </div>
+
+  <div class="panel">
+    <h2>What goes in this transport</h2>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Request</th><th>Description</th><th>Owner</th>
+            <th>Objects</th><th>State</th><th>What is blocking it</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="e : ${train}">
+            <td class="nowrap muted" th:text="${e.order}">1</td>
+            <td class="nowrap">
+              <a th:href="@{'/requests/' + ${e.request.trkorr}}" th:text="${e.request.trkorr}">K900009</a>
+            </td>
+            <td th:text="${e.request.description}">Description</td>
+            <td class="nowrap muted small" th:text="${e.request.owner}">OWNER</td>
+            <td class="nowrap" th:text="${e.objectCount}">0</td>
+            <td class="nowrap">
+              <span class="pill" th:classappend="${e.state == 'READY'} ? 'status-ok'
+                      : (${e.state == 'BLOCKED'} ? 'status-failed'
+                      : (${e.state == 'IN_DEVELOPMENT'} ? 'status-warning' : 'status-queued'))"
+                    th:text="${e.state}">READY</span>
+            </td>
+            <td class="muted small">
+              <span th:each="b : ${e.blockers}" th:text="${b} + ' '">Blocker</span>
+              <span th:if="${#lists.isEmpty(e.blockers)}">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Import checklist <span class="hint" th:text="${lineCount} + ' lines'">0 lines</span></h2>
+    <pre class="code-block" th:text="${checklist}">checklist</pre>
+  </div>
+</div>
+</body>
+</html>

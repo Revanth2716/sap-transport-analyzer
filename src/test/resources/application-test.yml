@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:transporttest;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    root: WARN
+    com.revzz.sap.transport: INFO
+
+transport:
+  application-name: "SAP Transport & Change Management Analyzer"
+  sap-system: "TMS"
+  gateway: "local"
+  seed-demo-users: true
+  seed-demo-data: true
+  demo-password: "demo1234"
+  seed:
+    history-days: 180
+    random-seed: 20261111
+  policy:
+    stale-request-days: 30
+    unreleased-request-days: 60
+    modified-after-import-days: 1

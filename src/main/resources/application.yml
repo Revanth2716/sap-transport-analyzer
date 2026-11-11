@@ -1,0 +1,70 @@
+server:
+  port: 8085
+  servlet:
+    session:
+      timeout: 30m
+    cookie:
+      http-only: true
+      same-site: lax
+
+spring:
+  application:
+    name: "SAP Transport & Change Management Analyzer"
+
+  datasource:
+    url: jdbc:h2:file:./data/transportdb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+  thymeleaf:
+    cache: true
+    encoding: UTF-8
+
+  mail:
+    host: localhost
+    port: 1025
+
+logging:
+  level:
+    root: INFO
+    com.revzz.sap.transport: INFO
+
+# ---------------------------------------------------------------------------
+# Application configuration
+# ---------------------------------------------------------------------------
+transport:
+  application-name: "SAP Transport & Change Management Analyzer"
+  sap-system: "TMS"
+  # local  - read the transport data from the local database (the default)
+  # jco    - read it from a live SAP system over RFC (needs the with-jco profile)
+  gateway: "local"
+  seed-demo-users: true
+  seed-demo-data: true
+  demo-password: "demo1234"
+
+  seed:
+    # How many days back the request history goes.
+    history-days: 180
+    random-seed: 20261111
+
+  policy:
+    # A request older than this is "forgotten" - nobody is coming back to it.
+    stale-request-days: 30
+    # A request that has been open this long without being released is a
+    # release risk, because the objects behind it drift.
+    unreleased-request-days: 60
+    # How many days a request may stay open after its objects were last
+    # changed before the delta is flagged.
+    modified-after-import-days: 1
+
+  mail:
+    enabled: false
+    from: "transport-analyzer@example.com"
+    to: "basis-team@example.com"
+    subject-prefix: "[SAP Transport]"

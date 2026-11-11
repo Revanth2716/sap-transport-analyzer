@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Release train')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav('releases')}"></nav>
+
+<div class="page">
+  <div class="page-head">
+    <h1>Release trains</h1>
+    <p>For each target system: what can go into the next transport, in what order,
+      and what is stopping the rest.</p>
+  </div>
+
+  <div class="panel" th:each="s : ${systems}">
+    <h2>
+      <a th:href="@{'/releases/' + ${s.systemId}}" th:text="${s.systemId}">PRD</a>
+      <span class="hint" th:text="${s.description} + ' · ' + ${s.systemRole}">Description</span>
+    </h2>
+    <div class="flex">
+      <span class="pill status-ok" th:if="${s.target}">production target</span>
+      <span class="pill"
+            th:each="e : ${trains[s.systemId]}"
+            th:classappend="${e.state == 'READY'} ? 'status-ok'
+                    : (${e.state == 'BLOCKED'} ? 'status-failed' : 'status-warning')"
+            th:text="${e.state} + ' ' + ${e.request.trkorr}">READY K900009</span>
+    </div>
+    <div class="scroll mt">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Request</th><th>Description</th><th>Owner</th>
+            <th>Objects</th><th>State</th><th>What is blocking it</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="e : ${trains[s.systemId]}">
+            <td class="nowrap muted" th:text="${e.order}">1</td>
+            <td class="nowrap">
+              <a th:href="@{'/requests/' + ${e.request.trkorr}}" th:text="${e.request.trkorr}">K900009</a>
+            </td>
+            <td th:text="${e.request.description}">Description</td>
+            <td class="nowrap muted small" th:text="${e.request.owner}">OWNER</td>
+            <td class="nowrap" th:text="${e.objectCount}">0</td>
+            <td class="nowrap">
+              <span class="pill" th:classappend="${e.state == 'READY'} ? 'status-ok'
+                      : (${e.state == 'BLOCKED'} ? 'status-failed'
+                      : (${e.state == 'IN_DEVELOPMENT'} ? 'status-warning' : 'status-queued'))"
+                    th:text="${e.state}">READY</span>
+            </td>
+            <td class="muted small">
+              <span th:each="b : ${e.blockers}" th:text="${b} + ' '">Blocker</span>
+              <span th:if="${#lists.isEmpty(e.blockers)}">-</span>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(trains[s.systemId])}">
+            <td colspan="7" class="muted center">No requests target this system.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
